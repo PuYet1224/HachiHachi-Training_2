@@ -1,13 +1,13 @@
-// src/SearchableDropdown/SearchableDropdown.jsx
 import React, { useState, useEffect, useRef } from "react";
-import "./SearchableDropdown.css"; 
+import "./SearchableDropdown.css";
 
 const SearchableDropdown = ({
-  options,
+  options = [],
   selectedOption,
   setSelectedOption,
-  placeholder,
-  onSelect, // Thêm prop onSelect
+  placeholder = "Select...",
+  onSelect,
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
@@ -15,17 +15,26 @@ const SearchableDropdown = ({
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
-  const filteredOptions = options.filter((option) =>
+  const processedOptions = options.map((option) => {
+    if (typeof option === "string") {
+      return { label: option, value: option, disabled: false };
+    }
+    // Ensure each option has a 'disabled' property
+    return { ...option, disabled: option.disabled || false };
+  });
+
+  const filteredOptions = processedOptions.filter((option) =>
     option.label.toLowerCase().includes(filter.toLowerCase())
   );
 
   const handleOptionClick = (option) => {
+    if (disabled || option.disabled) return;
     setSelectedOption(option.value);
     setIsOpen(false);
     setFilter("");
     setHighlightedIndex(-1);
     if (onSelect) {
-      onSelect(option.value); // Gọi hàm onSelect khi một tùy chọn được chọn
+      onSelect(option.value);
     }
   };
 
@@ -41,6 +50,7 @@ const SearchableDropdown = ({
   };
 
   const handleKeyDown = (e) => {
+    if (disabled) return; // Do nothing if dropdown is disabled
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setIsOpen(true);
@@ -75,17 +85,23 @@ const SearchableDropdown = ({
     }
   }, [isOpen]);
 
-  const displayLabel = getLabelByValue(options, selectedOption);
+  const getLabelByValue = (options, value) => {
+    const option = options.find((opt) => opt.value === value);
+    return option ? option.label : "-- Chọn --";
+  };
+
+  const displayLabel = getLabelByValue(processedOptions, selectedOption);
 
   return (
     <div
-      className={`searchable-dropdown ${isOpen ? "open" : ""}`}
+      className={`searchable-dropdown ${isOpen ? "open" : ""} ${
+        disabled ? "disabled" : ""
+      }`}
       ref={dropdownRef}
       role="combobox"
       aria-haspopup="listbox"
       aria-expanded={isOpen}
       aria-owns="dropdown-list"
-      aria-controls="dropdown-list"
       aria-labelledby="dropdown-input"
     >
       <div className="dropdown-input-container">
@@ -97,10 +113,14 @@ const SearchableDropdown = ({
           placeholder={placeholder}
           value={isOpen ? filter : displayLabel}
           onChange={(e) => {
+            if (disabled) return;
             setFilter(e.target.value);
             setIsOpen(true);
           }}
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={() => {
+            if (disabled) return;
+            setIsOpen((prev) => !prev);
+          }}
           onKeyDown={handleKeyDown}
           aria-autocomplete="list"
           aria-controls="dropdown-list"
@@ -109,10 +129,18 @@ const SearchableDropdown = ({
               ? `dropdown-item-${highlightedIndex}`
               : undefined
           }
+          disabled={disabled}
+          style={{
+            backgroundColor: disabled ? "#DBDEE7" : "#fff",
+            cursor: disabled ? "not-allowed" : "text",
+          }}
         />
         <div
           className={`dropdown-arrow ${isOpen ? "open" : ""}`}
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={() => {
+            if (disabled) return;
+            setIsOpen((prev) => !prev);
+          }}
           aria-hidden="true"
         >
           <svg
@@ -145,9 +173,13 @@ const SearchableDropdown = ({
                 aria-selected={selectedOption === option.value}
                 className={`dropdown-item ${
                   highlightedIndex === index ? "highlighted" : ""
-                }`}
+                } ${option.disabled ? "disabled-option" : ""}`}
                 onClick={() => handleOptionClick(option)}
                 onMouseEnter={() => setHighlightedIndex(index)}
+                style={{
+                  cursor: option.disabled ? "not-allowed" : "pointer",
+                  color: option.disabled ? "#999" : "#000",
+                }}
               >
                 {option.label}
               </li>
@@ -161,11 +193,6 @@ const SearchableDropdown = ({
       )}
     </div>
   );
-};
-
-const getLabelByValue = (options, value) => {
-  const option = options.find((opt) => opt.value === value);
-  return option ? option.label : "-- Chọn --";
 };
 
 export default SearchableDropdown;
