@@ -294,3 +294,17 @@
 .exception-table td {
     border: none; 
 }
+
+.sub-table {
+  width: 404px;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background-color: #f9f9f9;
+}
+
+.sub-table th,
+.sub-table td {
+  border: none; 
+  padding: 8px;
+}
+

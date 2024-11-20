@@ -1,3 +1,4 @@
+// SearchableDropdown.jsx
 import React, { useState, useEffect, useRef } from "react";
 import "./SearchableDropdown.css";
 
@@ -5,9 +6,12 @@ const SearchableDropdown = ({
   options = [],
   selectedOption,
   setSelectedOption,
+  selectedOptions = [], // Thêm prop selectedOptions
+  setSelectedOptions,    // Thêm prop setSelectedOptions
   placeholder = "Select...",
   onSelect,
   disabled = false,
+  multiSelect = false,   // Thêm prop multiSelect
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
@@ -19,7 +23,7 @@ const SearchableDropdown = ({
     if (typeof option === "string") {
       return { label: option, value: option, disabled: false };
     }
-    // Ensure each option has a 'disabled' property
+    // Đảm bảo mỗi option có thuộc tính 'disabled'
     return { ...option, disabled: option.disabled || false };
   });
 
@@ -29,12 +33,35 @@ const SearchableDropdown = ({
 
   const handleOptionClick = (option) => {
     if (disabled || option.disabled) return;
-    setSelectedOption(option.value);
-    setIsOpen(false);
-    setFilter("");
-    setHighlightedIndex(-1);
-    if (onSelect) {
-      onSelect(option.value);
+
+    if (multiSelect) {
+      if (selectedOptions.includes(option.value)) {
+        // Nếu đã chọn, thì bỏ chọn
+        const newSelectedOptions = selectedOptions.filter(
+          (value) => value !== option.value
+        );
+        setSelectedOptions(newSelectedOptions);
+        if (onSelect) {
+          onSelect(newSelectedOptions);
+        }
+      } else {
+        // Nếu chưa chọn, thì thêm vào
+        const newSelectedOptions = [...selectedOptions, option.value];
+        setSelectedOptions(newSelectedOptions);
+        if (onSelect) {
+          onSelect(newSelectedOptions);
+        }
+      }
+      setFilter("");
+      setHighlightedIndex(-1);
+    } else {
+      setSelectedOption(option.value);
+      setIsOpen(false);
+      setFilter("");
+      setHighlightedIndex(-1);
+      if (onSelect) {
+        onSelect(option.value);
+      }
     }
   };
 
@@ -50,7 +77,7 @@ const SearchableDropdown = ({
   };
 
   const handleKeyDown = (e) => {
-    if (disabled) return; // Do nothing if dropdown is disabled
+    if (disabled) return; // Không làm gì nếu dropdown bị vô hiệu hóa
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setIsOpen(true);
@@ -90,7 +117,11 @@ const SearchableDropdown = ({
     return option ? option.label : "-- Chọn --";
   };
 
-  const displayLabel = getLabelByValue(processedOptions, selectedOption);
+  const displayLabel = multiSelect
+    ? ""
+    : selectedOption && selectedOption !== "-- Chọn --"
+    ? getLabelByValue(processedOptions, selectedOption)
+    : "-- Chọn --";
 
   return (
     <div
@@ -158,6 +189,25 @@ const SearchableDropdown = ({
           </svg>
         </div>
       </div>
+      {/* Hiển thị các lựa chọn đã chọn khi ở chế độ multiSelect */}
+      {multiSelect && selectedOptions.length > 0 && (
+        <div className="selected-options">
+          {selectedOptions.map((value) => (
+            <span key={value} className="selected-option">
+              {getLabelByValue(processedOptions, value)}
+              <span
+                className="remove-option"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOptionClick({ value });
+                }}
+              >
+                &nbsp;✖
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
       {isOpen && (
         <ul
           className="dropdown-menu open"
@@ -170,7 +220,11 @@ const SearchableDropdown = ({
                 key={option.value}
                 id={`dropdown-item-${index}`}
                 role="option"
-                aria-selected={selectedOption === option.value}
+                aria-selected={
+                  multiSelect
+                    ? selectedOptions.includes(option.value)
+                    : selectedOption === option.value
+                }
                 className={`dropdown-item ${
                   highlightedIndex === index ? "highlighted" : ""
                 } ${option.disabled ? "disabled-option" : ""}`}

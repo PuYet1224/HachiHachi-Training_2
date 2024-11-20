@@ -66,3 +66,24 @@
   padding: 10px;
   text-align: center;
 }
+/* SearchableDropdown.css */
+.selected-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.selected-option {
+  background-color: #e6f7ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.selected-option .remove-option {
+  cursor: pointer;
+  margin-left: 4px;
+  color: #ff4d4f;
+}
