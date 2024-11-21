@@ -1,4 +1,3 @@
-// ExceptionTable.jsx
 import React, { useState } from "react";
 import "./ExceptionTable.css";
 import SearchableDropdown from "../SearchableDropdown/SearchableDropdown";
@@ -19,13 +18,20 @@ const headPositions = [
 const ExceptionTable = ({ onClose }) => {
   const [exceptionOption, setExceptionOption] = useState("");
   const [searchOption, setSearchOption] = useState("");
-  const [isExceptionDisabled, setIsExceptionDisabled] = useState(false);
-  const [isSearchDisabled, setIsSearchDisabled] = useState(true);
   const [tableRows, setTableRows] = useState([]);
   const [expandedRows, setExpandedRows] = useState({});
-
+  const [exceptionBodies, setExceptionBodies] = useState([
+    { id: Date.now(), exceptionOption: "", searchOption: "" },
+  ]);
+  
   const allExceptions = ["Chức danh", "Điểm làm việc", "Loại nhân sự"];
-
+  const handleAddExceptionBody = () => {
+    setExceptionBodies((prev) => [
+      ...prev,
+      { id: Date.now(), exceptionOption: "", searchOption: "" },
+    ]);
+  };
+  
   const getSearchOptions = (exception) => {
     switch (exception) {
       case "Chức danh":
@@ -53,20 +59,19 @@ const ExceptionTable = ({ onClose }) => {
   };
 
   const handleExceptionChange = (value) => {
-    setExceptionOption(value);
+    if (value === "-- Chọn --") {
+      setExceptionOption("");
+    } else {
+      setExceptionOption(value);
+    }
     setSearchOption("");
     setTableRows([]);
-
-    setIsSearchDisabled(value === "-- Chọn --" || !value ? true : false);
-
-    setIsExceptionDisabled(false);
   };
 
   const handleSearchChange = (value) => {
     if (!value) return;
     setSearchOption(value);
     addRowToTable(exceptionOption, value);
-    setIsExceptionDisabled(true);
     setSearchOption("");
   };
 
@@ -82,8 +87,7 @@ const ExceptionTable = ({ onClose }) => {
         (item) => item.value === searchValue
       );
       if (selectedPosition) {
-        const [positionLabel, positionCode] =
-          selectedPosition.label.split(" | ");
+        const [positionLabel, positionCode] = selectedPosition.label.split(" | ");
         label = positionLabel;
         additionalData = {
           unit: unitMappingdata[positionCode] || "Đơn vị không xác định",
@@ -120,10 +124,9 @@ const ExceptionTable = ({ onClose }) => {
       label,
       dropdownValue: "-- Chọn --",
       hasSubTable: false,
-      subDropdownValue: "",
-      hasNestedTable: false,
-      nestedRows: [],
-      showTrashIconInNestedTable: false,
+      subDropdownValues: [],
+      hasNestedTables: false,
+      nestedSelectedOptions: {},
       ...additionalData,
     };
 
@@ -131,12 +134,47 @@ const ExceptionTable = ({ onClose }) => {
   };
 
   const handleDeleteRow = (id) => {
-    setTableRows((prevRows) => {
-      return prevRows.filter((row) => row.id !== id);
-    });
-    if (tableRows.length <= 1) {
-      setIsExceptionDisabled(false);
-    }
+    setTableRows((prevRows) => prevRows.filter((row) => row.id !== id));
+  };
+
+  const handleDeleteSubTable = (id) => {
+    setTableRows((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === id) {
+          return {
+            ...row,
+            dropdownValue: "-- Chọn --",
+            hasSubTable: false,
+            subDropdownValues: [],
+            hasNestedTables: false,
+            nestedSelectedOptions: {},
+          };
+        }
+        return row;
+      })
+    );
+  };
+
+  const handleDeleteNestedTable = (rowId, subValue) => {
+    setTableRows((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === rowId) {
+          const updatedSubDropdownValues = row.subDropdownValues.filter(
+            (value) => value !== subValue
+          );
+          const updatedNestedSelectedOptions = { ...row.nestedSelectedOptions };
+          delete updatedNestedSelectedOptions[subValue];
+
+          return {
+            ...row,
+            subDropdownValues: updatedSubDropdownValues,
+            nestedSelectedOptions: updatedNestedSelectedOptions,
+            hasNestedTables: updatedSubDropdownValues.length > 0,
+          };
+        }
+        return row;
+      })
+    );
   };
 
   const handleDropdownValueChange = (rowId, newValue) => {
@@ -147,10 +185,9 @@ const ExceptionTable = ({ onClose }) => {
             ...row,
             dropdownValue: newValue,
             hasSubTable: newValue !== "-- Chọn --",
-            hasNestedTable: false,
-            subDropdownValue: "",
-            nestedRows: [],
-            showTrashIconInNestedTable: false,
+            subDropdownValues: newValue !== "-- Chọn --" ? [] : [],
+            hasNestedTables: false,
+            nestedSelectedOptions: {},
           };
         }
         return row;
@@ -158,65 +195,19 @@ const ExceptionTable = ({ onClose }) => {
     );
   };
 
-  const handleSubDropdownChange = (rowId, newValue) => {
-    setTableRows((prevRows) =>
-      prevRows.map((row) => {
-        if (row.id === rowId) {
-          return {
-            ...row,
-            subDropdownValue: newValue,
-            hasNestedTable: newValue !== "",
-            nestedRows: [],
-            showTrashIconInNestedTable: newValue !== "",
-          };
-        }
-        return row;
-      })
-    );
-  };
+  const handleSubDropdownChange = (rowId, selectedValue) => {
+    if (selectedValue === "-- Chọn --") return;
 
-  const handleAddNestedRow = (rowId, nestedValue) => {
     setTableRows((prevRows) =>
       prevRows.map((row) => {
         if (row.id === rowId) {
-          const remainingExceptions = allExceptions.filter(
-            (e) =>
-              e !== exceptionOption &&
-              e !== row.dropdownValue &&
-              e !== row.subDropdownValue
-          );
-          const exception = remainingExceptions[0];
-          const options = getOptionsForException(exception);
-          const selectedOption = options.find(
-            (option) => option.value === nestedValue
-          );
-          const selectedOptionLabel = selectedOption
-            ? selectedOption.label
-            : nestedValue;
-          return {
-            ...row,
-            nestedRows: [
-              ...row.nestedRows,
-              { selectedOption: nestedValue, selectedOptionLabel },
-            ],
-          };
-        }
-        return row;
-      })
-    );
-  };
-
-  const handleDeleteNestedRow = (rowId, index) => {
-    setTableRows((prevRows) =>
-      prevRows.map((row) => {
-        if (row.id === rowId) {
-          const newNestedRows = row.nestedRows.filter((_, i) => i !== index);
-          return {
-            ...row,
-            nestedRows: newNestedRows,
-            showTrashIconInNestedTable:
-              newNestedRows.length > 0 || row.subDropdownValue !== "",
-          };
+          if (!row.subDropdownValues.includes(selectedValue)) {
+            return {
+              ...row,
+              subDropdownValues: [...row.subDropdownValues, selectedValue],
+              hasNestedTables: true,
+            };
+          }
         }
         return row;
       })
@@ -234,7 +225,8 @@ const ExceptionTable = ({ onClose }) => {
     return exceptionOptionsdata.map((option) => ({
       ...option,
       disabled:
-        option.value === currentException || option.value === exceptionOption,
+        option.value === currentException ||
+        option.value === exceptionOption,
     }));
   };
 
@@ -251,27 +243,42 @@ const ExceptionTable = ({ onClose }) => {
     }
   };
 
-  const getOptionsForException = (exception, selectedValues = []) => {
-    let options = [];
+  const getOptionsForException = (exception) => {
     switch (exception) {
       case "Chức danh":
-        options = positionOptionsdata;
-        break;
+        return positionOptionsdata;
       case "Điểm làm việc":
-        options = workLocationOptionsdata;
-        break;
+        return workLocationOptionsdata;
       case "Loại nhân sự":
-        options = employeeTypeOptionsdata;
-        break;
+        return employeeTypeOptionsdata;
       default:
-        options = [];
-        break;
+        return [];
     }
-    return options.filter((option) => !selectedValues.includes(option.value));
+  };
+
+  const handleNestedDropdownChange = (rowId, subValue, newSelectedOptions) => {
+    setTableRows((prevRows) =>
+      prevRows.map((row) => {
+        if (row.id === rowId) {
+          const updatedNestedOptions = {
+            ...row.nestedSelectedOptions,
+            [subValue]: newSelectedOptions,
+          };
+          return {
+            ...row,
+            nestedSelectedOptions: updatedNestedOptions,
+          };
+        }
+        return row;
+      })
+    );
   };
 
   const searchOptions = getSearchOptions(exceptionOption);
   const searchPlaceholder = getSearchPlaceholder(exceptionOption);
+
+  const isSectionLeftDisabled = tableRows.length > 0;
+  const isSectionRightDisabled = exceptionOption === "";
 
   return (
     <div className="exception-table-container">
@@ -279,12 +286,23 @@ const ExceptionTable = ({ onClose }) => {
       <div className="header">
         <h2>THÊM NGOẠI LỆ</h2>
         <button className="close-button" onClick={onClose}>
-          {/* SVG Icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 352 512"
+            width="16"
+            height="16"
+          >
+            <path
+              fill="#fff"
+              d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.19 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.19 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+            />
+          </svg>
         </button>
       </div>
 
       {/* Main Body */}
       <div className="main-body">
+        {/* Section Left */}
         <div className="left-section">
           <label className="section-label">Ngoại lệ theo(*)</label>
           <SearchableDropdown
@@ -292,11 +310,12 @@ const ExceptionTable = ({ onClose }) => {
             selectedOption={exceptionOption}
             setSelectedOption={handleExceptionChange}
             placeholder="-- Chọn --"
-            disabled={isExceptionDisabled}
+            disabled={isSectionLeftDisabled}
+            multiSelect={false}
           />
         </div>
 
-        {/* Section: Tìm kiếm */}
+        {/* Section Right */}
         <div className="right-section">
           <label className="section-label">Tìm kiếm</label>
           <SearchableDropdown
@@ -304,11 +323,13 @@ const ExceptionTable = ({ onClose }) => {
             selectedOption={searchOption}
             setSelectedOption={handleSearchChange}
             placeholder={searchPlaceholder}
-            disabled={!exceptionOption || exceptionOption === "-- Chọn --"}
+            disabled={isSectionRightDisabled}
+            multiSelect={false}
           />
         </div>
       </div>
 
+      {/* Table Section */}
       {tableRows.length > 0 && (
         <div className="table-section">
           <table className="exception-table">
@@ -327,42 +348,61 @@ const ExceptionTable = ({ onClose }) => {
             <tbody>
   {tableRows.map((row) => {
     const isExpanded = expandedRows[row.id] ?? true;
-    const remainingExceptions = allExceptions.filter(
-      (e) =>
-        e !== exceptionOption &&
-        e !== row.dropdownValue &&
-        e !== row.subDropdownValue
-    );
-
     return (
       <React.Fragment key={row.id}>
+        <tr className="main-row"></tr>
         <tr>
           <td>
-            <button
-              className="dropdown-button"
-              title="Thu gọn/Mở rộng"
-              onClick={() => toggleRowExpansion(row.id)}
+          <button
+          className="dropdown-button"
+          title="Thu gọn/Mở rộng"
+          onClick={() => toggleRowExpansion(row.id)}
+        >
+          {isExpanded ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1A6634"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              {isExpanded ? "-" : "+"}
-            </button>
+              <path d="M6 15l6-6 6 6" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#1A6634"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          )}
+        </button>
           </td>
 
-          {/* Giá trị cột chính */}
           <td>
             {row.exception === "Chức danh" && row.label}
             {row.exception === "Điểm làm việc" && row.locationName}
             {row.exception === "Loại nhân sự" && row.employeeType}
           </td>
 
-          {/* Chỉ hiển thị "Đơn vị trực thuộc" nếu ngoại lệ là "Chức danh" */}
           {row.exception === "Chức danh" && <td>{row.unit}</td>}
 
-          {/* Trưởng đơn vị */}
           {row.exception === "Chức danh" && (
             <td>{row.isHead ? "Trưởng đơn vị" : ""}</td>
           )}
 
-          {/* Dropdown thứ nhất trong dòng */}
+          {/* Cái này là dropdown thứ nhất */}
           <td>
             <SearchableDropdown
               options={getAvailableExceptionOptions(row.exception)}
@@ -372,94 +412,161 @@ const ExceptionTable = ({ onClose }) => {
               }
               placeholder="-- Chọn --"
               disabled={false}
+              multiSelect={false}
             />
+          </td>
+          <td>
+            {row.subDropdownValues.length === 0 && (
+              <button
+                className="trash-button"
+                onClick={() => handleDeleteRow(row.id)}
+                title="Xóa"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 448 512"
+                  width="16"
+                  height="16"
+                  fill="#ff0000"
+                >
+                  <path d="M135.2 17.7L128 0H320l-7.2 17.7C309.4 32.3 320 48.6 320 66.7V96h32v32c0 8.8-7.2 16-16 16h-32v288c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V144H64c-8.8 0-16-7.2-16-16V96h32V66.7c0-18.1 10.6-34.4 27.2-49Z" />
+                </svg>
+              </button>
+            )}
           </td>
         </tr>
 
-        {/* Dropdown thứ hai */}
+        {/* Th này là dropdown thứ hai */}
         {isExpanded && row.hasSubTable && row.dropdownValue !== "-- Chọn --" && (
           <tr>
-            <td colSpan="4">
+            <td></td>
+            <td colSpan={row.exception === "Chức danh" ? 3 : 1}>
               <SearchableDropdown
                 options={getOptionsForDropdownValue(row.dropdownValue)}
-                selectedOption={row.subDropdownValue}
-                setSelectedOption={(newValue) =>
-                  handleSubDropdownChange(row.id, newValue)
-                }
+                selectedOption="" 
+                setSelectedOption={(selectedValue) => {
+                  if (selectedValue !== "-- Chọn --") {
+                    handleSubDropdownChange(row.id, selectedValue);
+                  }
+                }}
                 placeholder="-- Chọn --"
                 disabled={false}
+                multiSelect={false} 
+                hideSelectedOptions={true}
               />
             </td>
+            <td></td>
           </tr>
         )}
 
-        {/* Bảng con sau dropdown thứ hai */}
-        {isExpanded && row.hasNestedTable && (
-          <tr>
-            <td colSpan="5">
-              <table className="nested-sub-table">
-                <thead>
-                  <tr>
-                    <th>{row.dropdownValue}</th> 
-                    <th>{remainingExceptions[0]}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {row.nestedRows.map((nestedRow, index) => (
-                    <tr key={index}>
-                      <td>{nestedRow.selectedOptionLabel}</td>
-                      <td>
-                        <button
-                          className="trash-button"
-                          onClick={() =>
-                            handleDeleteNestedRow(row.id, index)
-                          }
-                          title="Xóa"
-                        >
-                          ✖
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <td>{row.dropdownValue}</td> 
-                    <td>
-                      <SearchableDropdown
-                        options={getOptionsForException(
-                          remainingExceptions[0],
-                          row.nestedRows.map((nr) => nr.selectedOption)
-                        )}
-                        selectedOption=""
-                        setSelectedOption={(nestedValue) =>
-                          handleAddNestedRow(row.id, nestedValue)
-                        }
-                        placeholder="-- Chọn --"
-                        disabled={false}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        className="trash-button"
-                        onClick={() => handleDeleteRow(row.id)}
-                        title="Xóa"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 448 512"
-                          width="16"
-                          height="16"
-                          fill="#ff0000"
-                        >
-                          <path d="M135.2 17.7L128 0H320l-7.2 17.7C309.4 32.3 320 48.6 320 66.7V96h32v32c0 8.8-7.2 16-16 16h-32v288c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V144H64c-8.8 0-16-7.2-16-16V96h32V66.7c0-18.1 10.6-34.4 27.2-49Z" />
-                        </svg>
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
-          </tr>
-        )}
+        {/* Thằng này là cái table được sinh ra từ thằng dropdown thứ hai */}
+        {isExpanded && row.hasNestedTables &&
+          row.subDropdownValues.map((subValue) => {
+            const remainingExceptions = allExceptions.filter(
+              (e) =>
+                e !== exceptionOption &&
+                e !== row.dropdownValue &&
+                e !== subValue
+            );
+
+            const option = [
+              ...positionOptionsdata,
+              ...workLocationOptionsdata,
+              ...employeeTypeOptionsdata
+            ].find(opt => opt.value === subValue);
+
+            return (
+              <tr key={`${row.id}-${subValue}`}>
+  <td></td>
+  <td
+    colSpan={
+      row.exception === "Chức danh" ? 3 : 1
+    }
+    style={{ padding: 0 }}
+  >
+    <table className="nested-sub-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          <th></th>
+          <th>{remainingExceptions[0]}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span>{option ? option.label.split(" | ")[0] : "Không xác định"}</span>
+              <span style={{ fontSize: "0.9em", color: "#555" }}>
+                {option ? option.value : ""}
+              </span>
+            </div>
+          </td>
+          <td>
+            <SearchableDropdown
+              options={getOptionsForException(remainingExceptions[0])}
+              selectedOptions={
+                row.nestedSelectedOptions
+                  ? row.nestedSelectedOptions[subValue] || []
+                  : []
+              }
+              setSelectedOptions={(newSelectedOptions) =>
+                handleNestedDropdownChange(row.id, subValue, newSelectedOptions)
+              }
+              placeholder="-- Chọn --"
+              disabled={false}
+              multiSelect={true}
+              hideSelectedOptions={false}
+              customStyles={{
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isSelected ? "#1A6634" : "#fff",
+                  color: state.isSelected ? "#fff" : "#000",
+                  cursor: "pointer",
+                }),
+                multiValue: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#1A6634",
+                  color: "#fff",
+                }),
+                multiValueLabel: (provided) => ({
+                  ...provided,
+                  color: "#fff",
+                }),
+                multiValueRemove: (provided) => ({
+                  ...provided,
+                  color: "#fff",
+                  ':hover': {
+                    backgroundColor: "#ff0000",
+                    color: "white",
+                  },
+                }),
+              }}
+            />
+          </td>
+          <td>
+            <button
+              className="trash-button"
+              onClick={() => handleDeleteNestedTable(row.id, subValue)}
+              title="Xóa"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 448 512"
+                width="16"
+                height="16"
+                fill="#ff0000"
+              >
+                <path d="M135.2 17.7L128 0H320l-7.2 17.7C309.4 32.3 320 48.6 320 66.7V96h32v32c0 8.8-7.2 16-16 16h-32v288c0 17.7-14.3 32-32 32H128c-17.7 0-32-14.3-32-32V144H64c-8.8 0-16-7.2-16-16V96h32V66.7c0-18.1 10.6-34.4 27.2-49Z" />
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </td>
+</tr>
+            );
+          })}
       </React.Fragment>
     );
   })}
@@ -468,26 +575,34 @@ const ExceptionTable = ({ onClose }) => {
         </div>
       )}
 
-      {/* Create Exception Button */}
-      <div className="create-exception-button-container">
-        <button
-          className="create-exception-button"
-          onClick={() => {
-            if (exceptionOption && searchOption) {
-              addRowToTable(exceptionOption, searchOption);
-            } else {
-              alert("Vui lòng chọn ngoại lệ và tìm kiếm để tạo.");
-            }
-          }}
-        >
-          <span className="icon-circle">
-            {/* SVG Icon */}
-          </span>
-          <span className="label-text">Tạo ngoại lệ</span>
-        </button>
-      </div>
+      {/* cái này không làm kịp */}
+<div className="create-exception-button-container">
+  <button
+    className="create-exception-button"
+    onClick={() => {
+      if (exceptionOption && searchOption) {
+        addRowToTable(exceptionOption, searchOption);
+      } else {
+        alert("CHỨC NĂNG NÀY ĐANG ĐƯỢC PHÁT TRIỂN...");
+      }
+    }}
+  >
+    <span className="icon-circle">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 100 100"
+        width="24"
+        height="24"
+      >
+        <line x1="50" y1="35" x2="50" y2="65" stroke="#1A6634" strokeWidth="3" />
+        <line x1="35" y1="50" x2="65" y2="50" stroke="#1A6634" strokeWidth="3" />
+      </svg>
+    </span>
+    <span className="label-text">Tạo ngoại lệ</span>
+  </button>
+</div>
 
-      {/* Footer Buttons */}
+      {/* Footer */}
       <div className="footer-buttons">
         <button className="close-footer-button" onClick={onClose}>
           Đóng

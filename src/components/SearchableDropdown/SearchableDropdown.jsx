@@ -1,17 +1,17 @@
-// SearchableDropdown.jsx
 import React, { useState, useEffect, useRef } from "react";
 import "./SearchableDropdown.css";
 
+// mấy cái này là prop
 const SearchableDropdown = ({
   options = [],
   selectedOption,
   setSelectedOption,
-  selectedOptions = [], // Thêm prop selectedOptions
-  setSelectedOptions,    // Thêm prop setSelectedOptions
-  placeholder = "Select...",
+  selectedOptions = [], 
+  setSelectedOptions,  
+  placeholder = "-- Chọn --",
   onSelect,
   disabled = false,
-  multiSelect = false,   // Thêm prop multiSelect
+  multiSelect = false,   
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [filter, setFilter] = useState("");
@@ -23,7 +23,6 @@ const SearchableDropdown = ({
     if (typeof option === "string") {
       return { label: option, value: option, disabled: false };
     }
-    // Đảm bảo mỗi option có thuộc tính 'disabled'
     return { ...option, disabled: option.disabled || false };
   });
 
@@ -36,7 +35,6 @@ const SearchableDropdown = ({
 
     if (multiSelect) {
       if (selectedOptions.includes(option.value)) {
-        // Nếu đã chọn, thì bỏ chọn
         const newSelectedOptions = selectedOptions.filter(
           (value) => value !== option.value
         );
@@ -45,7 +43,6 @@ const SearchableDropdown = ({
           onSelect(newSelectedOptions);
         }
       } else {
-        // Nếu chưa chọn, thì thêm vào
         const newSelectedOptions = [...selectedOptions, option.value];
         setSelectedOptions(newSelectedOptions);
         if (onSelect) {
@@ -77,7 +74,7 @@ const SearchableDropdown = ({
   };
 
   const handleKeyDown = (e) => {
-    if (disabled) return; // Không làm gì nếu dropdown bị vô hiệu hóa
+    if (disabled) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setIsOpen(true);
@@ -189,7 +186,6 @@ const SearchableDropdown = ({
           </svg>
         </div>
       </div>
-      {/* Hiển thị các lựa chọn đã chọn khi ở chế độ multiSelect */}
       {multiSelect && selectedOptions.length > 0 && (
         <div className="selected-options">
           {selectedOptions.map((value) => (

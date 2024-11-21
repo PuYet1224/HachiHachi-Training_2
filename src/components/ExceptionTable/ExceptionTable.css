@@ -11,9 +11,10 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-}
-
-.header {
+    z-index: 1000; 
+  }
+  
+  .header {
     width: 100%;
     height: 50px;
     background-color: #1A6634;
@@ -22,17 +23,17 @@
     align-items: center;
     border-radius: 8px 8px 0 0;
     position: relative;
-}
-
-.header h2 {
+  }
+  
+  .header h2 {
     color: #fff;
     font-size: 20px;
     font-weight: 600;
     margin: 0;
     text-transform: uppercase;
-}
-
-.close-button {
+  }
+  
+  .close-button {
     position: absolute;
     top: 50%;
     right: 20px;
@@ -41,57 +42,58 @@
     border: none;
     cursor: pointer;
     padding: 0;
-}
-
-.close-button svg {
+  }
+  
+  .close-button svg {
     width: 16px;
     height: 16px;
     fill: #fff;
     transition: fill 0.3s ease;
-}
-
-.close-button:hover svg {
+  }
+  
+  .close-button:hover svg {
     fill: #ccc;
-}
-
-.main-body {
+  }
+  
+  .main-body {
     display: flex;
     justify-content: space-between;
     gap: 20px;
     padding: 20px;
     box-sizing: border-box;
-}
-
-.left-section,
-.right-section {
+  }
+  
+  .left-section,
+  .right-section {
     width: 45%;
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-.section-label {
+  }
+  
+  .section-label {
     font-weight: bold;
     font-size: 14px;
     color: #000;
-}
-
-.right-section.disabled {
+  }
+  
+  .right-section.disabled {
     pointer-events: none; 
-}
-
-.right-section.disabled .dropdown-input {
+  }
+  
+  .right-section.disabled .dropdown-input {
     background-color: #DBDEE7; 
     color: #999; 
-}
+  }
+  
 
-.create-exception-button-container {
+  .create-exception-button-container {
     display: flex;
     justify-content: center;
     padding: 20px 0;
-}
-
-.create-exception-button {
+  }
+  
+  .create-exception-button {
     display: inline-flex;
     align-items: center;
     gap: 10px;
@@ -101,9 +103,9 @@
     border: none;
     cursor: pointer;
     transition: color 0.3s ease;
-}
-
-.icon-circle {
+  }
+  
+  .icon-circle {
     width: 30px;
     height: 30px;
     display: flex;
@@ -112,22 +114,26 @@
     border: 1px solid #1A6634;
     border-radius: 50%;
     background-color: #fff;
-}
-
-.icon-plus {
+  }
+  
+  .icon-plus {
     width: 20px;
     height: 20px;
     fill: #1A6634;
-}
-
-.footer-buttons {
+  }
+  
+  .create-exception-button:hover {
+    color: #155D2E; 
+  }
+  
+  .footer-buttons {
     display: flex;
     justify-content: center;
     gap: 20px;
     padding: 20px 0;
-}
-
-.close-footer-button {
+  }
+  
+  .close-footer-button {
     background-color: #FFFFFF;
     color: #1A6634; 
     border: none;
@@ -140,14 +146,14 @@
     cursor: pointer;
     box-shadow: 0px 4px 10px rgba(10, 175, 254, 0.42); 
     transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.close-footer-button:hover {
+  }
+  
+  .close-footer-button:hover {
     background-color: #f6e5e5; 
     color: #1A6634; 
-}
-
-.update-footer-button {
+  }
+  
+  .update-footer-button {
     background-color: #1A6634; 
     color: #FFFFFF; 
     border: none;
@@ -159,152 +165,127 @@
     cursor: pointer;
     box-shadow: 0px 4px 10px rgba(10, 175, 254, 0.42); 
     transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.update-footer-button:hover {
+  }
+  
+  .update-footer-button:hover {
     background-color: #155D2E; 
     box-shadow: 0px 6px 12px rgba(10, 175, 254, 0.5); 
-}
-
-@media (max-width: 768px) {
+  }
+  
+  @media (max-width: 768px) {
     .exception-table-container {
-        width: 90%;
+      width: 90%;
     }
-
+  
     .main-body {
-        flex-direction: column;
-        align-items: center;
+      flex-direction: column;
+      align-items: center;
     }
-
+  
     .left-section,
     .right-section {
-        width: 100%;
+      width: 100%;
     }
-
+  
     .close-footer-button,
     .update-footer-button {
-        width: 100%;
+      width: 100%;
     }
-}
-
-/* Chỉnh sửa phần bảng */
-.table-section {
-    padding: 0; /* Loại bỏ padding của bảng */
-}
-
-.exception-table {
-    width: 100%; /* Đảm bảo bảng rộng đầy đủ */
+  }
+  
+  .table-section {
+    padding: 0; 
+  }
+  
+  .exception-table {
+    width: 100%; 
     border-collapse: collapse;
     font-family: 'Mulish', sans-serif;
-}
-
-.exception-table th,
-.exception-table td {
-    padding: 10px 15px; /* Khoảng cách nội dung */
-    text-align: left; /* Căn trái */
+  }
+  
+  .exception-table th,
+  .exception-table td {
+    padding: 10px 15px; 
+    text-align: left; 
     font-size: 14px;
     border-bottom: 1px solid #ddd;
-}
-
-.exception-table th {
-    background-color: #f5f5f5; /* Nền nhạt */
+  }
+  
+  .exception-table th {
+    background-color: #f5f5f5;
     font-weight: bold;
-    color: #333; /* Màu chữ header */
-}
-
-/* Loại bỏ nền mặc định và thêm hover */
-.exception-table tbody tr {
-    background-color: #fff; /* Nền mặc định */
-    border: none; /* Loại bỏ border */
-}
-
-.exception-table tbody tr:hover {
-    background-color: rgba(26, 102, 52, 0.2); /* Màu xanh #1A6634 với độ mờ 20% */
-    border: none; /* Loại bỏ border khi hover */
-}
-
-/* Căn giữa nội dung theo chiều dọc */
-.exception-table td {
-    vertical-align: middle; /* Căn giữa theo chiều dọc */
-}
-
-/* Chỉnh sửa dropdown */
-.exception-table .dropdown {
+    color: #333;
+  }
+  
+  .exception-table tbody tr {
+    background-color: #fff; 
+    border: none; 
+  }
+  
+  .exception-table tbody tr.main-row:hover {
+    background-color: #1A6634; 
+    color: #fff; 
+  }
+  
+  .exception-table tbody tr:not(.main-row):hover {
+    background-color: transparent;
+  }
+  
+  .nested-sub-table {
     width: 100%;
-    padding: 6px 8px; /* Kích thước gọn */
-    font-size: 14px;
-    border: 1px solid #ccc; /* Viền mặc định */
-    border-radius: 4px;
+    border-collapse: collapse;
+    background-color: #f9f9f9;
+    position: relative; 
+  }
+  
+  .nested-sub-table th,
+  .nested-sub-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .nested-sub-table tbody tr {
     background-color: #fff;
-    appearance: none; /* Loại bỏ phong cách mặc định */
-    cursor: pointer;
-    transition: border 0.3s ease, box-shadow 0.3s ease;
-}
-
-.exception-table .dropdown:focus {
-    border-color: transparent; /* Biến mất viền khi focus */
-    box-shadow: 0 0 3px rgba(26, 102, 52, 0.5); /* Hiệu ứng focus */
-}
-
-.exception-table .dropdown:hover {
-    border-color: #1A6634; /* Màu xanh khi hover */
-}
-
-/* Chỉnh sửa nút thùng rác */
-.exception-table .trash-button {
+  }
+  
+  .nested-sub-table tbody tr:hover {
+    background-color: #fff; 
+  }
+  
+  .nested-sub-table .searchable-dropdown .dropdown-menu {
+    z-index: 1001; 
+  }
+  
+  .exception-table th, 
+  .exception-table td {
+    border: none;
+  }
+  .trash-button {
     background: transparent;
     border: none;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     padding: 0;
-    transition: transform 0.2s ease-in-out;
-}
-
-.exception-table .trash-button svg {
-    fill: red; /* Màu đỏ cho thùng rác */
-    width: 18px;
-    height: 18px;
-}
-
-.exception-table .trash-button:hover svg {
-    transform: scale(1.2); /* Phóng to khi hover */
-}
-
-/* Căn chỉnh Actions Container */
-.actions-container {
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px; /* Khoảng cách giữa dropdown và nút xóa */
+    justify-content: center;
+    margin-left: auto; 
+    margin-top: auto; 
+  }
+
+.dropdown-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
-/* Loại bỏ đường viền dọc (nếu có) */
-.exception-table tbody tr td {
-    border-left: none;
-    border-right: none;
-}
-
-/* Đảm bảo không có outline khi focus vào hàng */
-.exception-table tbody tr:focus {
-    outline: none;
-}
-.exception-table,
-.exception-table th,
-.exception-table td {
-    border: none; 
-}
-
-.sub-table {
-  width: 404px;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background-color: #f9f9f9;
-}
-
-.sub-table th,
-.sub-table td {
-  border: none; 
-  padding: 8px;
+.dropdown-button svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
 }
 
